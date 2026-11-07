@@ -1,5 +1,5 @@
 #!/bin/sh
-# Color Balance for Onion (Miyoo Mini Plus) v1.0.0
+# Color Balance for Onion (Miyoo Mini Plus) v1.0.1
 # https://github.com/TR2NLG/onion-color-balance
 # Adjusts the warmth and the red, green and blue gains of the display with a
 # live preview. Saved values are applied through Onion's own blue light filter,
@@ -32,7 +32,9 @@ clamp() { v=$1; [ "$v" -lt "$2" ] && v=$2; [ "$v" -gt "$3" ] && v=$3; echo "$v";
 ensure_hook() {
 	[ -f "$BLF" ] || return 1
 	grep -q "COLOR_BALANCE_HOOK" "$BLF" && return 0
-	[ -f "$BLF.orig" ] || cp "$BLF" "$BLF.orig"
+	# the script has no hook (first start, or Onion replaced it in an update):
+	# keep exactly this version as backup, so a restore never brings back an older script
+	cp "$BLF" "$BLF.orig"
 	awk '
 		{ print }
 		/^setRGBValues\(\) \{/ && !done {
@@ -59,6 +61,33 @@ show_images() { # $1 folder; A or right = next image, B or left = back, MENU = r
 		return
 	fi
 	LD_PRELOAD=/mnt/SDCARD/miyoo/lib/libpadsp.so "$INFOPANEL" -d "$1" > /dev/null 2>&1
+}
+
+# Remove the four hook lines from the current script (no restore of an old backup).
+remove_hook() {
+	grep -q "COLOR_BALANCE_HOOK" "$BLF" || return 0
+	awk '/COLOR_BALANCE_HOOK/ { skip = 4 } skip > 0 { skip--; next } { print }' "$BLF" > "$BLF.tmp" || return 1
+	# if the result matches the backup (same Onion version), use the backup for a byte exact original
+	if [ -f "$BLF.orig" ] && awk '1' "$BLF.orig" | cmp -s - "$BLF.tmp"; then
+		cp "$BLF.orig" "$BLF.tmp"
+	fi
+	mv "$BLF.tmp" "$BLF" && chmod +x "$BLF"
+	! grep -q "COLOR_BALANCE_HOOK" "$BLF"
+}
+
+remove_from_onion() {
+	ask 'Remove Color Balance\nfrom Onion?\nColors are reset and the\nblue light filter turns off.' 1 "Yes, remove" "No"
+	[ "$ANSWER" = 0 ] || return 1
+	rm -f "$VALUES" "$STATE"
+	if remove_hook; then
+		sync
+		run_blf disable
+		R=128; G=128; B=128; apply_live
+		ask 'Removed.\nDelete the folder\nApp/ColorBalance\nto finish.' 0 "OK"
+	else
+		ask 'The lines in blue_light.sh\ncould not be removed.\nSee the README to do it\nby hand.' 0 "OK"
+	fi
+	return 0
 }
 
 run_blf() { # run Onion's script, retry once if it is busy
@@ -143,7 +172,7 @@ sel=0
 while true; do
 	compute; apply_live
 	ask "Warmth $W %   R $R  G $G  B $B" "$sel" \
-		"Warmer +5" "Warmer +1" "Cooler -1" "Cooler -5" "Red, green, blue ..." "Test images" "My screenshots" "Reset to neutral" "Save and exit" "Exit without saving"
+		"Warmer +5" "Warmer +1" "Cooler -1" "Cooler -5" "Red, green, blue ..." "Test images" "My screenshots" "Reset to neutral" "Save and exit" "Exit without saving" "Remove from Onion"
 	r=$ANSWER
 	case "$r" in
 		0) W=$((W + 5)) ;; 1) W=$((W + 1)) ;; 2) W=$((W - 1)) ;; 3) W=$((W - 5)) ;;
@@ -152,6 +181,7 @@ while true; do
 		6) show_images "$SHOTS" ;;
 		7) W=0; dR=0; dG=0; dB=0 ;;
 		8) compute; save_and_apply; exit 0 ;;
+		10) remove_from_onion && exit 0 ;;
 		*) restore_saved; exit 0 ;;
 	esac
 	[ "$r" -le 7 ] && sel=$r

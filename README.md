@@ -40,6 +40,7 @@ Main menu:
 | Reset to neutral | back to the original colors |
 | Save and exit | keep the setting |
 | Exit without saving (or B) | discard all changes |
+| Remove from Onion | undo everything the app changed in Onion, see Uninstall |
 
 In the image viewer, A or right shows the next image, B or left the previous one, MENU returns to the app.
 
@@ -58,7 +59,7 @@ If pure red in the color bars already looks pinkish, that is a hue issue of the 
 ## How it works
 
 - For the live preview the app writes the red, green and blue gains to the display driver.
-- On saving, the values are stored in `.tmp_update/config/display/colorBalance`. The app adds four lines to Onion's `.tmp_update/script/blue_light.sh` (a backup is kept as `blue_light.sh.orig`), so the Blue light filter applies these values instead of its fixed levels, and switches the filter on.
+- On saving, the values are stored in `.tmp_update/config/display/colorBalance`. The app adds four lines to Onion's `.tmp_update/script/blue_light.sh`, so the Blue light filter applies these values instead of its fixed levels, and switches the filter on. Whenever it has to add those lines, after the first start or after an Onion update, it first saves the script as `blue_light.sh.orig`. The backup therefore always matches the installed Onion version.
 - Onion therefore applies your colors at every boot, and the filter's hotkey switches them on and off, which is handy for comparing.
 - While custom values are saved, the **Strength** setting of the Blue light filter has no effect. If the filter **schedule** is on, your colors only apply in its time window; the app shows a note when you save.
 - If an Onion update replaces `blue_light.sh`, open Color Balance once and save again.
@@ -67,9 +68,10 @@ The Settings › Display values and Color Balance are separate stages in the dis
 
 ## Uninstall
 
-1. In Color Balance, choose **Reset to neutral**, then **Save and exit**.
+1. In Color Balance, choose **Remove from Onion** and confirm. This removes the four lines from `blue_light.sh`, deletes the saved values, resets the colors and switches the Blue light filter off.
 2. Delete the folder `App/ColorBalance`.
-3. Optionally restore the original filter script: in `.tmp_update/script/`, delete `blue_light.sh` and rename `blue_light.sh.orig` to `blue_light.sh`.
+
+If the app cannot be started any more: in `.tmp_update/script/`, delete `blue_light.sh` and rename `blue_light.sh.orig` to `blue_light.sh`, then delete `colorBalance` and `colorBalanceState` in `.tmp_update/config/display/`. Since v1.0.1 the backup always matches the installed Onion version. With v1.0.0, only do this if Onion has not been updated since you installed the app.
 
 ## Disclaimer
 
