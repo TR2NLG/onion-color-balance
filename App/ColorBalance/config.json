@@ -1,0 +1,7 @@
+{
+  "label": "Color Balance",
+  "icon": "icon.png",
+  "iconsel": "",
+  "launch": "launch.sh",
+  "description": "Warmth and red, green, blue balance of the display"
+}
