@@ -16,7 +16,7 @@ Color Balance adds the missing control:
 
 ## Requirements
 
-- Onion with the Blue light filter (Apps › Tweaks › Appearance). Tested with Onion 4.4 beta on a Miyoo Mini Plus.
+- Onion 4.3.1 or newer, including the 4.4 beta. Checked against the scripts of both versions, tested on a Miyoo Mini Plus with the 4.4 beta.
 - Other Miyoo Mini models should work as well, but are untested.
 
 ## Installation
